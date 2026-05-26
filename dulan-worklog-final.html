@@ -78,7 +78,13 @@ input[type=date]:focus{border-color:var(--sage);background:var(--white)}
 
 .clean-item{display:flex;align-items:center;gap:6px;padding:8px;border:1px solid var(--line);border-radius:var(--rsm);margin-bottom:5px;background:var(--smoke)}
 .clean-name{font-size:11px;color:var(--ink);font-weight:500;min-width:50px;flex:1}
+.clean-time{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);width:35px;text-align:right}
 .clean-btns{display:flex;gap:3px;flex-wrap:wrap}
+
+.setting-item{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:var(--rsm);margin-bottom:6px;background:var(--smoke)}
+.setting-name{font-size:11px;color:var(--ink);font-weight:500;flex:1;min-width:100px}
+.setting-input{width:60px;padding:6px;border:1px solid var(--line);border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;text-align:center}
+.setting-unit{font-size:10px;color:var(--ink3)}
 
 .custom-work-row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-end}
 .cw-input{flex:1;padding:8px;border:1px solid var(--line);border-radius:var(--rsm);background:var(--white);font-family:'Noto Sans TC',sans-serif;font-size:11px;outline:none}
@@ -152,6 +158,7 @@ textarea:focus{border-color:var(--sage);background:var(--white)}
   <div class="tab-bar">
     <button class="tab active" onclick="goTab('log')">填寫日誌</button>
     <button class="tab" onclick="goTab('mytask')">我的工作</button>
+    <button class="tab" onclick="goTab('settings')">⚙️ 設定</button>
   </div>
 </div>
 
@@ -187,7 +194,6 @@ textarea:focus{border-color:var(--sage);background:var(--white)}
 </div>
 
 <div class="page active" id="page-log">
-
   <div class="card">
     <div class="card-head">
       <div class="card-label"><div class="dot d-night"></div>基本資訊</div>
@@ -211,21 +217,21 @@ textarea:focus{border-color:var(--sage);background:var(--white)}
     <div class="card-head">
       <div class="card-label"><div class="dot d-sand"></div>常規工作 (每日)</div>
     </div>
-    <div class="card-body" id="routine-body"></div>
+    <div class="card-body" id="routine-body">載入中...</div>
   </div>
 
   <div class="card">
     <div class="card-head">
       <div class="card-label"><div class="dot d-rust"></div>清掃分配 (11:00~14:00)</div>
     </div>
-    <div class="card-body" id="clean-body"></div>
+    <div class="card-body" id="clean-body">載入中...</div>
   </div>
 
   <div class="card">
     <div class="card-head">
       <div class="card-label"><div class="dot d-sage"></div>公區清掃分配</div>
     </div>
-    <div class="card-body" id="public-body"></div>
+    <div class="card-body" id="public-body">載入中...</div>
   </div>
 
   <div class="card">
@@ -236,7 +242,7 @@ textarea:focus{border-color:var(--sage);background:var(--white)}
       <div class="row-lbl">接待組數</div>
       <div class="guest-input-row">
         <input type="number" class="guest-input" id="guest-count" placeholder="0" min="0" onchange="updateGuests()">
-        <span style="font-size:11px;color:var(--ink3)">組 × 5分</span>
+        <span style="font-size:11px;color:var(--ink3)">組 × 10分</span>
       </div>
     </div>
   </div>
@@ -288,7 +294,6 @@ textarea:focus{border-color:var(--sage);background:var(--white)}
     <div class="mytask-title">我的工作清單</div>
     <div class="mytask-sub">選擇職位查看今日任務（按時間排列）</div>
   </div>
-
   <div style="padding:0 16px;margin-bottom:16px">
     <div class="role-selector">
       <button class="role-pill" onclick="setMyRole('full')">正職</button>
@@ -296,8 +301,33 @@ textarea:focus{border-color:var(--sage);background:var(--white)}
       <button class="role-pill" onclick="setMyRole('helperB')">換宿B</button>
       <button class="role-pill" onclick="setMyRole('part')">兼職管家</button>
     </div>
-
     <div id="mytask-content"></div>
+  </div>
+</div>
+
+<div class="page" id="page-settings">
+  <div style="padding:0 16px;margin-bottom:16px">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-label"><div class="dot d-sand"></div>常規工作時間設定</div>
+      </div>
+      <div class="card-body" id="settings-routine">載入中...</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-label"><div class="dot d-rust"></div>清掃項目時間設定</div>
+      </div>
+      <div class="card-body" id="settings-clean">載入中...</div>
+    </div>
+
+    <div class="hint-bar">
+      💡 修改時間後會自動保存，下次填表時就會用新時間。
+    </div>
+
+    <button class="submit-btn" onclick="resetAllSettings()" style="background:var(--rust);margin-bottom:16px">
+      重置為預設值
+    </button>
   </div>
 </div>
 
@@ -318,9 +348,9 @@ const WD = ['日','一','二','三','四','五','六'];
 const STAFF_H = {full:8, helperA:4, helperB:4, part:8};
 const STAFF_NAMES = {full:'正職', helperA:'換宿A', helperB:'換宿B', part:'兼職管家'};
 
-const ROUTINE_TASKS = [
+const DEFAULT_ROUTINE_TASKS = [
   {id:'rt01', name:'開店', time:1, duration:'8:00~9:00', order:1},
-  {id:'rt02', name:'開店檢查&點錢、行政', time:1, duration:'9:00~10:00', order:2},
+  {id:'rt02', name:'開店檢查&點錢、行政、回信、接待客人', time:1, duration:'9:00~10:00', order:2},
   {id:'rt03', name:'巡房&入住前環境檢查', time:0.5, duration:'14:30~15:00', order:5},
   {id:'rt04', name:'公區打掃', time:1, duration:'15:00~16:00', order:6},
   {id:'rt05', name:'洗、曬、收工作巾', time:0.25, duration:'15:00', order:7},
@@ -331,21 +361,24 @@ const ROUTINE_TASKS = [
   {id:'rt10', name:'結帳', time:0.17, duration:'21:50~22:00', order:12},
 ];
 
-const CLEAN_ITEMS = [
+const DEFAULT_CLEAN_ITEMS = [
   {id:'c101a', name:'101房 A床'},
   {id:'c101b', name:'101房 B床'},
   {id:'c101c', name:'101房 C床'},
   {id:'c101d', name:'101房 D床'},
   {id:'c101wc', name:'101 廁所'},
+  {id:'c101pa', name:'101房 公區', time:10},
   {id:'c102e', name:'102房 E床'},
   {id:'c102f', name:'102房 F床'},
   {id:'c102g', name:'102房 G床'},
   {id:'c102h', name:'102房 H床'},
+  {id:'c102_103pa', name:'102 & 103房 公區', time:10},
   {id:'c103i', name:'103房 I床'},
   {id:'c103j', name:'103房 J床'},
   {id:'c103k', name:'103房 K床'},
   {id:'c103l', name:'103房 L床'},
   {id:'cr100', name:'100房'},
+  {id:'cr100tour', name:'100房 巡房', time:5},
   {id:'ctb1', name:'公廁'},
 ];
 
@@ -361,31 +394,47 @@ const PUBLIC_AREAS = [
   {id:'pa09', name:'天台'},
 ];
 
-let state = {
-  date:'',
-  attend:{full:true, helperA:true, helperB:true, part:false},
-  routines:{},
-  cleans:{},
-  publicAreas:{},
-  customWorks:[],
-  guests:0,
-  notes:''
-};
-
+let settings = {routines: {}, cleans: {}, routineNames: {}};
+let state = {date:'', attend:{full:true, helperA:true, helperB:true, part:false}, routines:{}, cleans:{}, publicAreas:{}, customWorks:[], guests:0, notes:''};
 let myTaskChecks = {};
 let myRole = null;
 
-ROUTINE_TASKS.forEach(t => {
-  state.routines[t.id] = {assign:[]};
-});
+function loadSettings() {
+  const saved = localStorage.getItem('dulanSettings');
+  if (saved) {
+    const p = JSON.parse(saved);
+    settings.routines = p.routines || {};
+    settings.cleans = p.cleans || {};
+    settings.routineNames = p.routineNames || {};
+  }
+  DEFAULT_ROUTINE_TASKS.forEach(t => {
+    if (!settings.routines[t.id]) settings.routines[t.id] = t.time;
+    if (!settings.routineNames[t.id]) settings.routineNames[t.id] = t.name;
+  });
+  DEFAULT_CLEAN_ITEMS.forEach(c => {
+    if (!settings.cleans[c.id]) settings.cleans[c.id] = c.time || 0.25;
+  });
+}
 
-CLEAN_ITEMS.forEach(c => {
-  state.cleans[c.id] = {staff:''};
-});
+function saveSettings() {
+  localStorage.setItem('dulanSettings', JSON.stringify(settings));
+}
 
-PUBLIC_AREAS.forEach(a => {
-  state.publicAreas[a.id] = '';
-});
+function resetAllSettings() {
+  if (confirm('確定要重置所有時間設定為預設值嗎？')) {
+    DEFAULT_ROUTINE_TASKS.forEach(t => {settings.routines[t.id] = t.time;});
+    DEFAULT_CLEAN_ITEMS.forEach(c => {settings.cleans[c.id] = c.time || 0.25;});
+    saveSettings();
+    buildSettingsPage();
+    alert('已重置為預設值');
+  }
+}
+
+function initState() {
+  DEFAULT_ROUTINE_TASKS.forEach(t => {state.routines[t.id] = {assign:[], time:settings.routines[t.id]};});
+  DEFAULT_CLEAN_ITEMS.forEach(c => {state.cleans[c.id] = {staff:'', time:settings.cleans[c.id]};});
+  PUBLIC_AREAS.forEach(a => {state.publicAreas[a.id] = '';});
+}
 
 function goTab(tab) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -393,6 +442,80 @@ function goTab(tab) {
   document.getElementById('page-'+tab).classList.add('active');
   document.querySelector(`.tab[onclick="goTab('${tab}')"]`).classList.add('active');
   if (tab === 'mytask') renderMyTasks();
+  if (tab === 'settings') buildSettingsPage();
+}
+
+function buildSettingsPage() {
+  const rb = document.getElementById('settings-routine');
+  rb.innerHTML = '';
+  DEFAULT_ROUTINE_TASKS.forEach(t => {
+    const w = document.createElement('div');
+    w.className = 'setting-item';
+    const name = settings.routineNames[t.id] || t.name;
+    const mins = Math.round(settings.routines[t.id]*60);
+    w.innerHTML = `
+      <div style="flex:1;min-width:0">
+        <input type="text" class="setting-input" style="width:100%;margin-bottom:4px;padding:4px" value="${name}" onchange="updateRoutineName('${t.id}', this.value)" placeholder="工作項目">
+        <div style="font-size:9px;color:var(--ink3)">${t.duration}</div>
+      </div>
+      <input type="number" class="setting-input" value="${mins}" step="1" onchange="updateRoutineSetting('${t.id}', this.value)">
+      <span class="setting-unit">分鐘</span>`;
+    rb.appendChild(w);
+  });
+  
+  const cb = document.getElementById('settings-clean');
+  cb.innerHTML = '';
+  const g = {};
+  DEFAULT_CLEAN_ITEMS.forEach(c => {
+    let r;
+    if (c.name.includes('101房') || c.name === '101 廁所') r = '101房';
+    else if (c.name.includes('102房')) r = '102房';
+    else if (c.name.includes('103房')) r = '103房';
+    else if (c.name.includes('102 & 103')) r = '103房';
+    else if (c.name.includes('100房')) r = '100房';
+    else if (c.name.includes('公廁')) r = '公廁';
+    
+    if (!g[r]) g[r] = [];
+    g[r].push(c);
+  });
+  
+  // 排序分組順序
+  const order = ['101房', '102房', '103房', '100房', '公廁'];
+  const sorted = order.filter(k => g[k]);
+  
+  sorted.forEach(r => {
+    const s = document.createElement('div');
+    s.className = 'section-sub';
+    s.textContent = r;
+    cb.appendChild(s);
+    g[r].forEach(c => {
+      const w = document.createElement('div');
+      w.className = 'setting-item';
+      const m = Math.round(settings.cleans[c.id]*60);
+      w.innerHTML = `<div class="setting-name">${c.name}</div><input type="number" class="setting-input" value="${m}" step="1" onchange="updateCleanSetting('${c.id}', this.value)"><span class="setting-unit">分鐘</span>`;
+      cb.appendChild(w);
+    });
+  });
+}
+
+function updateRoutineName(id, name) {
+  settings.routineNames[id] = name;
+  saveSettings();
+  buildRoutines();
+}
+
+function updateRoutineSetting(id, m) {
+  settings.routines[id] = parseFloat(m) / 60 || 0;
+  saveSettings();
+  buildRoutines();
+  calcStats();
+}
+
+function updateCleanSetting(id, m) {
+  settings.cleans[id] = parseFloat(m) / 60 || 0.25;
+  saveSettings();
+  buildCleans();
+  calcStats();
 }
 
 function initDate() {
@@ -413,10 +536,9 @@ function updateDate(ds) {
 
 document.getElementById('log-date').addEventListener('change', e => updateDate(e.target.value));
 
-function toggleAttend(staff) {
-  state.attend[staff] = !state.attend[staff];
-  const btn = document.querySelector(`.chip[data-attend="${staff}"]`);
-  btn.classList.toggle('sel', state.attend[staff]);
+function toggleAttend(s) {
+  state.attend[s] = !state.attend[s];
+  document.querySelector(`.chip[data-attend="${s}"]`).classList.toggle('sel', state.attend[s]);
   calcStats();
 }
 
@@ -427,145 +549,110 @@ function updateGuests() {
 
 function calcStats() {
   const totalH = Object.keys(state.attend).reduce((s,k) => s+(state.attend[k]?STAFF_H[k]:0), 0);
-  const cleanCount = Object.values(state.cleans).filter(c=>c.staff).length;
-  const cleanH = cleanCount * 0.25;
-  const routineH = ROUTINE_TASKS.reduce((s,t)=>s+t.time, 0);
-  const guestH = (state.guests || 0) * 5 / 60;
+  const cleanH = Object.values(state.cleans).filter(c=>c.staff).reduce((s,c)=>s+c.time, 0);
+  const routineH = Object.values(state.routines).reduce((s,t)=>s+t.time, 0);
+  const guestH = (state.guests || 0) * 10 / 60;
   const customH = state.customWorks.reduce((s,w)=>s+(parseInt(w.m)||0)/60, 0);
   const workH = cleanH + routineH + guestH + customH;
-  const freeH = Math.max(0, totalH - workH).toFixed(1);
   
   document.getElementById('stat-total').textContent = totalH;
   document.getElementById('stat-work').textContent = workH.toFixed(1);
   
-  const staffWork = {full:0, helperA:0, helperB:0, part:0};
-  
-  ROUTINE_TASKS.forEach(t => {
-    state.routines[t.id].assign.forEach(r => {
-      staffWork[r] += t.time;
-    });
-  });
-  
-  Object.values(state.cleans).forEach(c => {
-    if (c.staff) staffWork[c.staff] += 0.25;
-  });
-  
-  state.customWorks.forEach(w => {
-    staffWork[w.staff] += parseInt(w.m)||0 / 60;
-  });
-  
-  Object.keys(staffWork).forEach(staff => {
-    document.getElementById('sh-'+staff).textContent = staffWork[staff].toFixed(1)+'h';
-  });
+  const sw = {full:0, helperA:0, helperB:0, part:0};
+  Object.values(state.routines).forEach(t => {t.assign.forEach(r => {sw[r] += t.time;});});
+  Object.values(state.cleans).forEach(c => {if (c.staff) sw[c.staff] += c.time;});
+  state.customWorks.forEach(w => {sw[w.staff] += parseInt(w.m)||0 / 60;});
+  Object.keys(sw).forEach(s => {document.getElementById('sh-'+s).textContent = sw[s].toFixed(1)+'h';});
 }
 
 function buildRoutines() {
-  const body = document.getElementById('routine-body');
-  body.innerHTML = '';
-  const sorted = [...ROUTINE_TASKS].sort((a,b) => a.order - b.order);
-  sorted.forEach(t => {
+  const b = document.getElementById('routine-body');
+  b.innerHTML = '';
+  const so = [...DEFAULT_ROUTINE_TASKS].sort((a,b) => a.order - b.order);
+  so.forEach(t => {
     const rs = state.routines[t.id];
-    const wrap = document.createElement('div');
-    wrap.className = 'routine-item';
-    wrap.innerHTML = `
-      <div class="routine-head">
-        <div class="routine-info">
-          <div class="routine-name">${t.name}</div>
-          <div class="routine-time">${t.duration}</div>
-        </div>
-      </div>
-      <div class="routine-assign">
-        ${['full','helperA','helperB','part'].map(r => `
-          <button class="abtn a${r==='full'?'1':r==='helperA'?'2':r==='helperB'?'3':'4'} ${rs.assign.includes(r)?'on':''}" 
-            onclick="toggleRoutineAssign('${t.id}','${r}')">${STAFF_NAMES[r]}</button>
-        `).join('')}
-      </div>`;
-    body.appendChild(wrap);
+    const mins = Math.round(rs.time * 60);
+    const name = settings.routineNames[t.id] || t.name;
+    const w = document.createElement('div');
+    w.className = 'routine-item';
+    w.innerHTML = `<div class="routine-head"><div class="routine-info"><div class="routine-name">${name}</div><div class="routine-time">${t.duration} · ${mins}分</div></div></div><div class="routine-assign">${['full','helperA','helperB','part'].map(r => `<button class="abtn a${r==='full'?'1':r==='helperA'?'2':r==='helperB'?'3':'4'} ${rs.assign.includes(r)?'on':''}" onclick="toggleRoutineAssign('${t.id}','${r}')">${STAFF_NAMES[r]}</button>`).join('')}</div>`;
+    b.appendChild(w);
   });
 }
 
-function toggleRoutineAssign(taskId, role) {
-  const arr = state.routines[taskId].assign;
-  const idx = arr.indexOf(role);
-  if (idx>=0) arr.splice(idx,1); else arr.push(role);
+function toggleRoutineAssign(id, r) {
+  const a = state.routines[id].assign;
+  const i = a.indexOf(r);
+  if (i>=0) a.splice(i,1); else a.push(r);
   buildRoutines();
   calcStats();
 }
 
 function buildCleans() {
-  const body = document.getElementById('clean-body');
-  body.innerHTML = '';
-  
-  const grouped = {};
-  CLEAN_ITEMS.forEach(c => {
-    const room = c.name.match(/^(\d{3}房|101\s廁所|公廁)/)[0];
-    if (!grouped[room]) grouped[room] = [];
-    grouped[room].push(c);
+  const b = document.getElementById('clean-body');
+  b.innerHTML = '';
+  const g = {};
+  DEFAULT_CLEAN_ITEMS.forEach(c => {
+    let r;
+    if (c.name.includes('101房') || c.name === '101 廁所') r = '101房';
+    else if (c.name.includes('102房')) r = '102房';
+    else if (c.name.includes('103房')) r = '103房';
+    else if (c.name.includes('102 & 103')) r = '103房';
+    else if (c.name.includes('100房')) r = '100房';
+    else if (c.name.includes('公廁')) r = '公廁';
+    
+    if (!g[r]) g[r] = [];
+    g[r].push(c);
   });
-
-  Object.entries(grouped).forEach(([room, items]) => {
-    const section = document.createElement('div');
-    section.className = 'section-sub';
-    section.textContent = room;
-    body.appendChild(section);
-
-    items.forEach(c => {
+  
+  // 排序分組順序
+  const order = ['101房', '102房', '103房', '100房', '公廁'];
+  const sorted = order.filter(k => g[k]);
+  
+  sorted.forEach(r => {
+    const s = document.createElement('div');
+    s.className = 'section-sub';
+    s.textContent = r;
+    b.appendChild(s);
+    g[r].forEach(c => {
       const cs = state.cleans[c.id];
-      const wrap = document.createElement('div');
-      wrap.className = 'clean-item';
-      wrap.innerHTML = `
-        <div class="clean-name">${c.name}</div>
-        <div class="clean-btns">
-          ${['full','helperA','helperB','part'].map(r => `
-            <button class="abtn a${r==='full'?'1':r==='helperA'?'2':r==='helperB'?'3':'4'} ${cs.staff===r?'on':''}"
-              onclick="setCleanStaff('${c.id}','${r}')" style="padding:2px 5px;font-size:8px">${STAFF_NAMES[r]}</button>
-          `).join('')}
-        </div>`;
-      body.appendChild(wrap);
+      const w = document.createElement('div');
+      w.className = 'clean-item';
+      const m = Math.round(cs.time * 60);
+      w.innerHTML = `<div class="clean-name">${c.name}</div><div class="clean-time">${m}分</div><div class="clean-btns">${['full','helperA','helperB','part'].map(r => `<button class="abtn a${r==='full'?'1':r==='helperA'?'2':r==='helperB'?'3':'4'} ${cs.staff===r?'on':''}" onclick="setCleanStaff('${c.id}','${r}')" style="padding:2px 5px;font-size:8px">${STAFF_NAMES[r]}</button>`).join('')}</div>`;
+      b.appendChild(w);
     });
   });
 }
 
-function setCleanStaff(id, role) {
-  state.cleans[id].staff = state.cleans[id].staff === role ? '' : role;
+function setCleanStaff(id, r) {
+  state.cleans[id].staff = state.cleans[id].staff === r ? '' : r;
   buildCleans();
   calcStats();
 }
 
 function buildPublic() {
-  const body = document.getElementById('public-body');
-  body.innerHTML = '';
+  const b = document.getElementById('public-body');
+  b.innerHTML = '';
   PUBLIC_AREAS.forEach(a => {
-    const wrap = document.createElement('div');
-    wrap.className = 'clean-item';
-    wrap.innerHTML = `
-      <div class="clean-name">${a.name}</div>
-      <div class="clean-btns">
-        ${['full','helperA','helperB','part'].map(r => `
-          <button class="abtn a${r==='full'?'1':r==='helperA'?'2':r==='helperB'?'3':'4'} ${state.publicAreas[a.id]===r?'on':''}"
-            onclick="setPublicStaff('${a.id}','${r}')" style="padding:2px 5px;font-size:8px">${STAFF_NAMES[r]}</button>
-        `).join('')}
-      </div>`;
-    body.appendChild(wrap);
+    const w = document.createElement('div');
+    w.className = 'clean-item';
+    w.innerHTML = `<div class="clean-name">${a.name}</div><div style="flex:1"></div><div class="clean-btns">${['full','helperA','helperB','part'].map(r => `<button class="abtn a${r==='full'?'1':r==='helperA'?'2':r==='helperB'?'3':'4'} ${state.publicAreas[a.id]===r?'on':''}" onclick="setPublicStaff('${a.id}','${r}')" style="padding:2px 5px;font-size:8px">${STAFF_NAMES[r]}</button>`).join('')}</div>`;
+    b.appendChild(w);
   });
 }
 
-function setPublicStaff(id, role) {
-  state.publicAreas[id] = state.publicAreas[id] === role ? '' : role;
+function setPublicStaff(id, r) {
+  state.publicAreas[id] = state.publicAreas[id] === r ? '' : r;
   buildPublic();
 }
 
 function addCustomWork() {
-  const name = document.getElementById('cw-name').value;
-  const staff = document.getElementById('cw-staff').value;
+  const n = document.getElementById('cw-name').value;
+  const s = document.getElementById('cw-staff').value;
   const m = document.getElementById('cw-time').value;
-  
-  if (!name || !staff || !m) {
-    alert('請填入所有欄位');
-    return;
-  }
-  
-  state.customWorks.push({id: Date.now(), name, staff, m});
+  if (!n || !s || !m) { alert('請填入所有欄位'); return; }
+  state.customWorks.push({id: Date.now(), name:n, staff:s, m});
   document.getElementById('cw-name').value = '';
   document.getElementById('cw-staff').value = '';
   document.getElementById('cw-time').value = '';
@@ -574,18 +661,13 @@ function addCustomWork() {
 }
 
 function buildCustomWorks() {
-  const list = document.getElementById('custom-works-list');
-  list.innerHTML = '';
+  const l = document.getElementById('custom-works-list');
+  l.innerHTML = '';
   state.customWorks.forEach(w => {
-    const wrap = document.createElement('div');
-    wrap.className = 'custom-item';
-    wrap.innerHTML = `
-      <div class="custom-info">
-        <div class="custom-name">${w.name}</div>
-        <div class="custom-detail">${STAFF_NAMES[w.staff]} · ${w.m}分鐘</div>
-      </div>
-      <button class="custom-del" onclick="deleteCustomWork(${w.id})">✕</button>`;
-    list.appendChild(wrap);
+    const wr = document.createElement('div');
+    wr.className = 'custom-item';
+    wr.innerHTML = `<div class="custom-info"><div class="custom-name">${w.name}</div><div class="custom-detail">${STAFF_NAMES[w.staff]} · ${w.m}分鐘</div></div><button class="custom-del" onclick="deleteCustomWork(${w.id})">✕</button>`;
+    l.appendChild(wr);
   });
 }
 
@@ -595,89 +677,45 @@ function deleteCustomWork(id) {
   calcStats();
 }
 
-function setMyRole(role) {
-  myRole = role;
+function setMyRole(r) {
+  myRole = r;
   document.querySelectorAll('.role-pill').forEach(p => p.classList.remove('active'));
-  document.querySelector(`.role-pill[onclick="setMyRole('${role}')"]`).classList.add('active');
+  document.querySelector(`.role-pill[onclick="setMyRole('${r}')"]`).classList.add('active');
   renderMyTasks();
 }
 
 function renderMyTasks() {
-  const content = document.getElementById('mytask-content');
-  if (!myRole) {
-    content.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--ink3)">👆 請選擇職位</div>';
-    return;
-  }
-
-  let tasks = [];
-  
-  const sorted = [...ROUTINE_TASKS].sort((a,b) => a.order - b.order);
-  sorted.forEach(t => {
-    if (state.routines[t.id].assign.includes(myRole)) {
-      tasks.push({
-        id: 'rt_'+t.id,
-        name: t.name,
-        time: t.duration,
-        order: t.order,
-        type: 'routine'
-      });
+  const c = document.getElementById('mytask-content');
+  if (!myRole) { c.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--ink3)">👆 請選擇職位</div>'; return; }
+  let t = [];
+  const so = [...DEFAULT_ROUTINE_TASKS].sort((a,b) => a.order - b.order);
+  so.forEach(tk => {
+    if (state.routines[tk.id].assign.includes(myRole)) {
+      t.push({id: 'rt_'+tk.id, name: tk.name, time: tk.duration, order: tk.order, type: 'routine'});
     }
   });
-
-  CLEAN_ITEMS.forEach(c => {
-    if (state.cleans[c.id].staff === myRole) {
-      tasks.push({
-        id: 'cl_'+c.id,
-        name: c.name,
-        time: '11:00–14:00',
-        order: 3.5,
-        type: 'clean'
-      });
+  DEFAULT_CLEAN_ITEMS.forEach(cl => {
+    if (state.cleans[cl.id].staff === myRole) {
+      const m = Math.round(state.cleans[cl.id].time * 60);
+      t.push({id: 'cl_'+cl.id, name: cl.name, time: `11:00–14:00 (${m}分)`, order: 3.5, type: 'clean'});
     }
   });
-
   PUBLIC_AREAS.forEach(a => {
     if (state.publicAreas[a.id] === myRole) {
-      tasks.push({
-        id: 'pa_'+a.id,
-        name: a.name,
-        time: '15:00–16:00',
-        order: 6.5,
-        type: 'public'
-      });
+      t.push({id: 'pa_'+a.id, name: a.name, time: '15:00–16:00', order: 6.5, type: 'public'});
     }
   });
-
   state.customWorks.filter(w => w.staff === myRole).forEach(w => {
-    tasks.push({
-      id: 'cw_'+w.id,
-      name: w.name,
-      time: w.m+'分',
-      order: 13,
-      type: 'custom'
-    });
+    t.push({id: 'cw_'+w.id, name: w.name, time: w.m+'分', order: 13, type: 'custom'});
   });
-
-  tasks.sort((a,b) => a.order - b.order);
-
-  if (tasks.length === 0) {
-    content.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--ink3)">今天沒有分配工作</div>';
-    return;
-  }
-
-  let html = '';
-  tasks.forEach(task => {
-    const done = myTaskChecks[task.id] || false;
-    html += `
-      <div class="my-task">
-        <div class="my-check ${done?'done':''}" onclick="toggleMyCheck('${task.id}')">${done?'✓':''}</div>
-        <div class="my-info">
-          <div class="my-name">${task.name}</div>
-          <div class="my-time">${task.time}</div>
-        </div>
-      </div>`;
+  t.sort((a,b) => a.order - b.order);
+  if (t.length === 0) { c.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--ink3)">今天沒有分配工作</div>'; return; }
+  let h = '';
+  t.forEach(tk => {
+    const d = myTaskChecks[tk.id] || false;
+    h += `<div class="my-task"><div class="my-check ${d?'done':''}" onclick="toggleMyCheck('${tk.id}')">${d?'✓':''}</div><div class="my-info"><div class="my-name">${tk.name}</div><div class="my-time">${tk.time}</div></div></div>`;
   });
-  content.innerHTML = html;
+  c.innerHTML = h;
 }
 
 function toggleMyCheck(id) {
@@ -687,56 +725,31 @@ function toggleMyCheck(id) {
 
 function submitLog() {
   if (!state.date) { alert('請選擇日期'); return; }
-
   const d = new Date(state.date+'T00:00:00');
   const wd = '週' + WD[d.getDay()];
   const totalH = Object.keys(state.attend).reduce((s,k) => s+(state.attend[k]?STAFF_H[k]:0), 0);
-  
-  const cleansInfo = Object.entries(state.cleans).filter(([k,v])=>v.staff).map(([k,v])=>`${CLEAN_ITEMS.find(c=>c.id===k).name}:${STAFF_NAMES[v.staff]}`).join('、');
-  const areasInfo = Object.entries(state.publicAreas).filter(([k,v])=>v).map(([k,v])=>`${PUBLIC_AREAS.find(a=>a.id===k).name}:${STAFF_NAMES[v]}`).join('、');
-  const routinesInfo = ROUTINE_TASKS.map(t=>`${t.name}:${state.routines[t.id].assign.map(r=>STAFF_NAMES[r]).join(',') || '無'}`).join('、');
-  const customInfo = state.customWorks.map(w=>`${w.name}:${STAFF_NAMES[w.staff]}:${w.m}分`).join('、');
-
-  const summary = [
-    `【${state.date} ${wd}】`,
-    `總人力時數: ${totalH}h`,
-    '',
-    '【常規工作】',
-    routinesInfo || '無',
-    '',
-    '【清掃分配 (11:00~14:00)】',
-    cleansInfo || '無',
-    '',
-    '【公區清掃分配】',
-    areasInfo || '無',
-    '',
-    '【接待客人】',
-    state.guests ? `${state.guests}組 (${state.guests*5}分)` : '無',
-    '',
-    '【一次性工作】',
-    customInfo || '無',
-    '',
-    '【備註】',
-    document.getElementById('notes').value || '無'
-  ].join('\n');
-
-  const onStaff = Object.keys(state.attend).filter(k=>state.attend[k]).map(k=>STAFF_NAMES[k]).join('、');
-  document.getElementById('s-meta').textContent = `${state.date} ${wd}\n出勤: ${onStaff}`;
-  document.getElementById('s-data').textContent = summary;
+  const ci = Object.entries(state.cleans).filter(([k,v])=>v.staff).map(([k,v])=>{const it = DEFAULT_CLEAN_ITEMS.find(c=>c.id===k); const m = Math.round(v.time * 60); return `${it.name}:${STAFF_NAMES[v.staff]}(${m}分)`;}).join('、');
+  const ai = Object.entries(state.publicAreas).filter(([k,v])=>v).map(([k,v])=>`${PUBLIC_AREAS.find(a=>a.id===k).name}:${STAFF_NAMES[v]}`).join('、');
+  const ri = Object.entries(state.routines).map(([id,t])=>{const tk = DEFAULT_ROUTINE_TASKS.find(r=>r.id===id); const name = settings.routineNames[id] || tk.name; const m = Math.round(t.time*60); return `${name}:${t.assign.map(r=>STAFF_NAMES[r]).join(',') || '無'}(${m}分)`;}).join('、');
+  const csi = state.customWorks.map(w=>`${w.name}:${STAFF_NAMES[w.staff]}:${w.m}分`).join('、');
+  const s = [`【${state.date} ${wd}】`, `總人力時數: ${totalH}h`, '', '【常規工作】', ri || '無', '', '【清掃分配 (11:00~14:00)】', ci || '無', '', '【公區清掃分配】', ai || '無', '', '【接待客人】', state.guests ? `${state.guests}組 (${state.guests*10}分)` : '無', '', '【一次性工作】', csi || '無', '', '【備註】', document.getElementById('notes').value || '無'].join('\n');
+  const os = Object.keys(state.attend).filter(k=>state.attend[k]).map(k=>STAFF_NAMES[k]).join('、');
+  document.getElementById('s-meta').textContent = `${state.date} ${wd}\n出勤: ${os}`;
+  document.getElementById('s-data').textContent = s;
   document.getElementById('success-overlay').classList.add('show');
 }
 
 function copyData() {
-  const text = document.getElementById('s-data').textContent;
+  const t = document.getElementById('s-data').textContent;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = document.querySelector('.s-copy-btn');
-      btn.textContent = '✓ 已複製';
-      setTimeout(()=>{ btn.textContent='複製資料'; }, 2000);
+    navigator.clipboard.writeText(t).then(() => {
+      const b = document.querySelector('.s-copy-btn');
+      b.textContent = '✓ 已複製';
+      setTimeout(()=>{ b.textContent='複製資料'; }, 2000);
     });
   } else {
     const ta = document.createElement('textarea');
-    ta.value = text;
+    ta.value = t;
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
@@ -749,15 +762,10 @@ function resetForm() {
   state.customWorks = [];
   state.attend = {full:true, helperA:true, helperB:true, part:false};
   state.guests = 0;
-  ROUTINE_TASKS.forEach(t => { state.routines[t.id] = {assign:[]}; });
-  CLEAN_ITEMS.forEach(c => { state.cleans[c.id] = {staff:''}; });
-  PUBLIC_AREAS.forEach(a => { state.publicAreas[a.id] = ''; });
+  initState();
   document.getElementById('notes').value = '';
   document.getElementById('guest-count').value = '';
-  document.querySelectorAll('.chip[data-attend]').forEach(c => {
-    const staff = c.dataset.attend;
-    c.classList.toggle('sel', state.attend[staff]);
-  });
+  document.querySelectorAll('.chip[data-attend]').forEach(c => {c.classList.toggle('sel', state.attend[c.dataset.attend]);});
   buildRoutines();
   buildCleans();
   buildPublic();
@@ -767,7 +775,9 @@ function resetForm() {
   window.scrollTo(0,0);
 }
 
+loadSettings();
 initDate();
+initState();
 buildRoutines();
 buildCleans();
 buildPublic();
