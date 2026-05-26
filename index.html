@@ -141,6 +141,12 @@ textarea:focus{border-color:var(--sage);background:var(--white)}
 @media(max-width:480px){
   .stats-float{bottom:100px;right:12px;max-width:130px}
 }
+
+@keyframes fadeInOut {
+  0% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
 </style>
 </head>
 <body>
@@ -470,8 +476,8 @@ function buildSettingsPage() {
     let r;
     if (c.name.includes('101房') || c.name === '101 廁所') r = '101房';
     else if (c.name.includes('102房')) r = '102房';
-    else if (c.name.includes('103房')) r = '103房';
-    else if (c.name.includes('102 & 103')) r = '103房';
+    else if (c.name.includes('103房') && !c.name.includes('102 & 103')) r = '103房';
+    else if (c.name.includes('102 & 103')) r = '102 & 103房 公區';
     else if (c.name.includes('100房')) r = '100房';
     else if (c.name.includes('公廁')) r = '公廁';
     
@@ -480,7 +486,7 @@ function buildSettingsPage() {
   });
   
   // 排序分組順序
-  const order = ['101房', '102房', '103房', '100房', '公廁'];
+  const order = ['101房', '102房', '103房', '102 & 103房 公區', '100房', '公廁'];
   const sorted = order.filter(k => g[k]);
   
   sorted.forEach(r => {
@@ -501,12 +507,14 @@ function buildSettingsPage() {
 function updateRoutineName(id, name) {
   settings.routineNames[id] = name;
   saveSettings();
+  showSaveNotification();
   buildRoutines();
 }
 
 function updateRoutineSetting(id, m) {
   settings.routines[id] = parseFloat(m) / 60 || 0;
   saveSettings();
+  showSaveNotification();
   buildRoutines();
   calcStats();
 }
@@ -514,8 +522,29 @@ function updateRoutineSetting(id, m) {
 function updateCleanSetting(id, m) {
   settings.cleans[id] = parseFloat(m) / 60 || 0.25;
   saveSettings();
+  showSaveNotification();
   buildCleans();
   calcStats();
+}
+
+function showSaveNotification() {
+  const notif = document.createElement('div');
+  notif.style.cssText = `
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    background: var(--sage);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 1000;
+    animation: fadeInOut 2s;
+  `;
+  notif.textContent = '✓ 已自動保存';
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 2000);
 }
 
 function initDate() {
@@ -596,8 +625,8 @@ function buildCleans() {
     let r;
     if (c.name.includes('101房') || c.name === '101 廁所') r = '101房';
     else if (c.name.includes('102房')) r = '102房';
-    else if (c.name.includes('103房')) r = '103房';
-    else if (c.name.includes('102 & 103')) r = '103房';
+    else if (c.name.includes('103房') && !c.name.includes('102 & 103')) r = '103房';
+    else if (c.name.includes('102 & 103')) r = '102 & 103房 公區';
     else if (c.name.includes('100房')) r = '100房';
     else if (c.name.includes('公廁')) r = '公廁';
     
@@ -606,7 +635,7 @@ function buildCleans() {
   });
   
   // 排序分組順序
-  const order = ['101房', '102房', '103房', '100房', '公廁'];
+  const order = ['101房', '102房', '103房', '102 & 103房 公區', '100房', '公廁'];
   const sorted = order.filter(k => g[k]);
   
   sorted.forEach(r => {
