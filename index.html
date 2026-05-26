@@ -111,11 +111,11 @@ input[type=date]:focus{border-color:var(--sage);background:var(--white)}
 textarea{width:100%;border:1px solid var(--line);border-radius:var(--rsm);padding:11px 13px;font-family:'Noto Sans TC',sans-serif;font-size:13px;color:var(--ink);background:var(--smoke);resize:none;outline:none;line-height:1.8;min-height:100px}
 textarea:focus{border-color:var(--sage);background:var(--white)}
 
-.mytask-header{background:var(--night);color:var(--star);padding:12px 16px}
+.mytask-header{background:var(--night);color:var(--star);padding:12px 16px;margin-bottom:12px}
 .mytask-title{font-size:14px;font-weight:600;margin-bottom:2px}
 .mytask-sub{font-size:10px;opacity:.6}
 
-.role-selector{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.role-selector{display:flex;gap:6px;margin-bottom:12px;margin-top:12px;flex-wrap:wrap}
 .role-pill{padding:8px 12px;border:1px solid var(--line);border-radius:40px;background:var(--white);font-size:11px;font-weight:600;color:var(--ink3);cursor:pointer;transition:all .15s}
 .role-pill.active{background:var(--night);border-color:var(--night);color:var(--star)}
 
@@ -487,6 +487,7 @@ function buildSettingsPage() {
     else if (c.name.includes('103房') && !c.name.includes('102 & 103')) r = '103房';
     else if (c.name.includes('102 & 103')) r = '102 & 103房 公區';
     else if (c.name.includes('100房')) r = '100房';
+    else if (c.name === '公廁') r = '公廁';
     
     if (!g[r]) g[r] = [];
     g[r].push(c);
@@ -627,6 +628,7 @@ function buildCleans() {
     else if (c.name.includes('103房') && !c.name.includes('102 & 103')) r = '103房';
     else if (c.name.includes('102 & 103')) r = '102 & 103房 公區';
     else if (c.name.includes('100房')) r = '100房';
+    else if (c.name === '公廁') r = '公廁';
     
     if (!g[r]) g[r] = [];
     g[r].push(c);
