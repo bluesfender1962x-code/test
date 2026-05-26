@@ -147,6 +147,8 @@ textarea:focus{border-color:var(--sage);background:var(--white)}
   90% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+.save-notif{position:fixed;bottom:100px;right:20px;background:var(--sage);color:white;padding:12px 16px;border-radius:8px;font-size:12px;font-weight:600;z-index:1000;animation:fadeInOut 2s}
 </style>
 </head>
 <body>
@@ -358,13 +360,12 @@ const DEFAULT_ROUTINE_TASKS = [
   {id:'rt01', name:'開店', time:1, duration:'8:00~9:00', order:1},
   {id:'rt02', name:'開店檢查&點錢、行政、回信、接待客人', time:1, duration:'9:00~10:00', order:2},
   {id:'rt03', name:'巡房&入住前環境檢查', time:0.5, duration:'14:30~15:00', order:5},
-  {id:'rt04', name:'公區打掃', time:1, duration:'15:00~16:00', order:6},
-  {id:'rt05', name:'洗、曬、收工作巾', time:0.25, duration:'15:00', order:7},
-  {id:'rt06', name:'備品歸位', time:0.25, duration:'17:00~17:15', order:8},
-  {id:'rt07', name:'點蚊香&開燈', time:0.17, duration:'17:00~17:10', order:9},
-  {id:'rt08', name:'丟垃圾', time:0.08, duration:'17:50~17:55', order:10},
-  {id:'rt09', name:'閉店', time:0.33, duration:'21:30~22:00', order:11},
-  {id:'rt10', name:'結帳', time:0.17, duration:'21:50~22:00', order:12},
+  {id:'rt04', name:'洗、曬、收工作巾', time:0.25, duration:'15:00', order:7},
+  {id:'rt05', name:'備品歸位', time:0.25, duration:'17:00~17:15', order:8},
+  {id:'rt06', name:'點蚊香&開燈', time:0.17, duration:'17:00~17:10', order:9},
+  {id:'rt07', name:'丟垃圾', time:0.08, duration:'17:50~17:55', order:10},
+  {id:'rt08', name:'閉店', time:0.33, duration:'21:30~22:00', order:11},
+  {id:'rt09', name:'結帳', time:0.17, duration:'21:50~22:00', order:12},
 ];
 
 const DEFAULT_CLEAN_ITEMS = [
@@ -385,19 +386,17 @@ const DEFAULT_CLEAN_ITEMS = [
   {id:'c103l', name:'103房 L床'},
   {id:'cr100', name:'100房'},
   {id:'cr100tour', name:'100房 巡房', time:5},
-  {id:'ctb1', name:'公廁'},
 ];
 
 const PUBLIC_AREAS = [
-  {id:'pa01', name:'院子（含外圍）'},
-  {id:'pa02', name:'房間走廊'},
-  {id:'pa03', name:'廚房'},
-  {id:'pa04', name:'公廁'},
-  {id:'pa05', name:'榻榻米屋'},
-  {id:'pa06', name:'長桌區'},
-  {id:'pa07', name:'雜貨店'},
-  {id:'pa08', name:'洗衣區'},
-  {id:'pa09', name:'天台'},
+  {id:'pa01', name:'院子（含外圍）', time:10},
+  {id:'pa02', name:'房間走廊', time:5},
+  {id:'pa03', name:'廚房', time:15},
+  {id:'pa05', name:'榻榻米屋', time:15},
+  {id:'pa06', name:'長桌區', time:10},
+  {id:'pa07', name:'雜貨店', time:5},
+  {id:'pa08', name:'洗衣區', time:5},
+  {id:'pa09', name:'天台', time:5},
 ];
 
 let settings = {routines: {}, cleans: {}, routineNames: {}};
@@ -424,6 +423,14 @@ function loadSettings() {
 
 function saveSettings() {
   localStorage.setItem('dulanSettings', JSON.stringify(settings));
+}
+
+function showSaveNotification() {
+  const notif = document.createElement('div');
+  notif.className = 'save-notif';
+  notif.textContent = '✓ 已自動保存';
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 2000);
 }
 
 function resetAllSettings() {
@@ -479,14 +486,12 @@ function buildSettingsPage() {
     else if (c.name.includes('103房') && !c.name.includes('102 & 103')) r = '103房';
     else if (c.name.includes('102 & 103')) r = '102 & 103房 公區';
     else if (c.name.includes('100房')) r = '100房';
-    else if (c.name.includes('公廁')) r = '公廁';
     
     if (!g[r]) g[r] = [];
     g[r].push(c);
   });
   
-  // 排序分組順序
-  const order = ['101房', '102房', '103房', '102 & 103房 公區', '100房', '公廁'];
+  const order = ['101房', '102房', '103房', '102 & 103房 公區', '100房'];
   const sorted = order.filter(k => g[k]);
   
   sorted.forEach(r => {
@@ -527,26 +532,6 @@ function updateCleanSetting(id, m) {
   calcStats();
 }
 
-function showSaveNotification() {
-  const notif = document.createElement('div');
-  notif.style.cssText = `
-    position: fixed;
-    bottom: 100px;
-    right: 20px;
-    background: var(--sage);
-    color: white;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    z-index: 1000;
-    animation: fadeInOut 2s;
-  `;
-  notif.textContent = '✓ 已自動保存';
-  document.body.appendChild(notif);
-  setTimeout(() => notif.remove(), 2000);
-}
-
 function initDate() {
   const t = new Date();
   const ds = [t.getFullYear(), String(t.getMonth()+1).padStart(2,'0'), String(t.getDate()).padStart(2,'0')].join('-');
@@ -580,9 +565,16 @@ function calcStats() {
   const totalH = Object.keys(state.attend).reduce((s,k) => s+(state.attend[k]?STAFF_H[k]:0), 0);
   const cleanH = Object.values(state.cleans).filter(c=>c.staff).reduce((s,c)=>s+c.time, 0);
   const routineH = Object.values(state.routines).reduce((s,t)=>s+t.time, 0);
+  const publicH = Object.entries(state.publicAreas).reduce((s,[id,staff])=>{
+    if (staff) {
+      const area = PUBLIC_AREAS.find(a=>a.id===id);
+      return s + (area.time || 5) / 60;
+    }
+    return s;
+  }, 0);
   const guestH = (state.guests || 0) * 10 / 60;
   const customH = state.customWorks.reduce((s,w)=>s+(parseInt(w.m)||0)/60, 0);
-  const workH = cleanH + routineH + guestH + customH;
+  const workH = cleanH + routineH + publicH + guestH + customH;
   
   document.getElementById('stat-total').textContent = totalH;
   document.getElementById('stat-work').textContent = workH.toFixed(1);
@@ -590,6 +582,12 @@ function calcStats() {
   const sw = {full:0, helperA:0, helperB:0, part:0};
   Object.values(state.routines).forEach(t => {t.assign.forEach(r => {sw[r] += t.time;});});
   Object.values(state.cleans).forEach(c => {if (c.staff) sw[c.staff] += c.time;});
+  Object.entries(state.publicAreas).forEach(([id,staff]) => {
+    if (staff) {
+      const area = PUBLIC_AREAS.find(a=>a.id===id);
+      sw[staff] += (area.time || 5) / 60;
+    }
+  });
   state.customWorks.forEach(w => {sw[w.staff] += parseInt(w.m)||0 / 60;});
   Object.keys(sw).forEach(s => {document.getElementById('sh-'+s).textContent = sw[s].toFixed(1)+'h';});
 }
@@ -628,14 +626,12 @@ function buildCleans() {
     else if (c.name.includes('103房') && !c.name.includes('102 & 103')) r = '103房';
     else if (c.name.includes('102 & 103')) r = '102 & 103房 公區';
     else if (c.name.includes('100房')) r = '100房';
-    else if (c.name.includes('公廁')) r = '公廁';
     
     if (!g[r]) g[r] = [];
     g[r].push(c);
   });
   
-  // 排序分組順序
-  const order = ['101房', '102房', '103房', '102 & 103房 公區', '100房', '公廁'];
+  const order = ['101房', '102房', '103房', '102 & 103房 公區', '100房'];
   const sorted = order.filter(k => g[k]);
   
   sorted.forEach(r => {
@@ -666,7 +662,8 @@ function buildPublic() {
   PUBLIC_AREAS.forEach(a => {
     const w = document.createElement('div');
     w.className = 'clean-item';
-    w.innerHTML = `<div class="clean-name">${a.name}</div><div style="flex:1"></div><div class="clean-btns">${['full','helperA','helperB','part'].map(r => `<button class="abtn a${r==='full'?'1':r==='helperA'?'2':r==='helperB'?'3':'4'} ${state.publicAreas[a.id]===r?'on':''}" onclick="setPublicStaff('${a.id}','${r}')" style="padding:2px 5px;font-size:8px">${STAFF_NAMES[r]}</button>`).join('')}</div>`;
+    const m = Math.round(a.time || 5);
+    w.innerHTML = `<div class="clean-name">${a.name}</div><div class="clean-time">${m}分</div><div class="clean-btns">${['full','helperA','helperB','part'].map(r => `<button class="abtn a${r==='full'?'1':r==='helperA'?'2':r==='helperB'?'3':'4'} ${state.publicAreas[a.id]===r?'on':''}" onclick="setPublicStaff('${a.id}','${r}')" style="padding:2px 5px;font-size:8px">${STAFF_NAMES[r]}</button>`).join('')}</div>`;
     b.appendChild(w);
   });
 }
@@ -674,6 +671,7 @@ function buildPublic() {
 function setPublicStaff(id, r) {
   state.publicAreas[id] = state.publicAreas[id] === r ? '' : r;
   buildPublic();
+  calcStats();
 }
 
 function addCustomWork() {
@@ -731,7 +729,8 @@ function renderMyTasks() {
   });
   PUBLIC_AREAS.forEach(a => {
     if (state.publicAreas[a.id] === myRole) {
-      t.push({id: 'pa_'+a.id, name: a.name, time: '15:00–16:00', order: 6.5, type: 'public'});
+      const m = Math.round(a.time || 5);
+      t.push({id: 'pa_'+a.id, name: a.name, time: `公區清掃 (${m}分)`, order: 6.5, type: 'public'});
     }
   });
   state.customWorks.filter(w => w.staff === myRole).forEach(w => {
@@ -758,7 +757,7 @@ function submitLog() {
   const wd = '週' + WD[d.getDay()];
   const totalH = Object.keys(state.attend).reduce((s,k) => s+(state.attend[k]?STAFF_H[k]:0), 0);
   const ci = Object.entries(state.cleans).filter(([k,v])=>v.staff).map(([k,v])=>{const it = DEFAULT_CLEAN_ITEMS.find(c=>c.id===k); const m = Math.round(v.time * 60); return `${it.name}:${STAFF_NAMES[v.staff]}(${m}分)`;}).join('、');
-  const ai = Object.entries(state.publicAreas).filter(([k,v])=>v).map(([k,v])=>`${PUBLIC_AREAS.find(a=>a.id===k).name}:${STAFF_NAMES[v]}`).join('、');
+  const ai = Object.entries(state.publicAreas).filter(([k,v])=>v).map(([k,v])=>{const a = PUBLIC_AREAS.find(ar=>ar.id===k); const m = Math.round(a.time || 5); return `${a.name}:${STAFF_NAMES[v]}(${m}分)`;}).join('、');
   const ri = Object.entries(state.routines).map(([id,t])=>{const tk = DEFAULT_ROUTINE_TASKS.find(r=>r.id===id); const name = settings.routineNames[id] || tk.name; const m = Math.round(t.time*60); return `${name}:${t.assign.map(r=>STAFF_NAMES[r]).join(',') || '無'}(${m}分)`;}).join('、');
   const csi = state.customWorks.map(w=>`${w.name}:${STAFF_NAMES[w.staff]}:${w.m}分`).join('、');
   const s = [`【${state.date} ${wd}】`, `總人力時數: ${totalH}h`, '', '【常規工作】', ri || '無', '', '【清掃分配 (11:00~14:00)】', ci || '無', '', '【公區清掃分配】', ai || '無', '', '【接待客人】', state.guests ? `${state.guests}組 (${state.guests*10}分)` : '無', '', '【一次性工作】', csi || '無', '', '【備註】', document.getElementById('notes').value || '無'].join('\n');
