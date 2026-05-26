@@ -386,6 +386,7 @@ const DEFAULT_CLEAN_ITEMS = [
   {id:'c103l', name:'103房 L床'},
   {id:'cr100', name:'100房'},
   {id:'cr100tour', name:'100房 巡房', time:5},
+  {id:'ctb1', name:'公廁'},
 ];
 
 const PUBLIC_AREAS = [
@@ -491,7 +492,7 @@ function buildSettingsPage() {
     g[r].push(c);
   });
   
-  const order = ['101房', '102房', '103房', '102 & 103房 公區', '100房'];
+  const order = ['101房', '102房', '103房', '102 & 103房 公區', '100房', '公廁'];
   const sorted = order.filter(k => g[k]);
   
   sorted.forEach(r => {
@@ -631,7 +632,7 @@ function buildCleans() {
     g[r].push(c);
   });
   
-  const order = ['101房', '102房', '103房', '102 & 103房 公區', '100房'];
+  const order = ['101房', '102房', '103房', '102 & 103房 公區', '100房', '公廁'];
   const sorted = order.filter(k => g[k]);
   
   sorted.forEach(r => {
